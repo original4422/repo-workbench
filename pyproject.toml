@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repo-workbench"
+version = "0.1.0"
+description = "Read-only delivery checks across local Git repositories"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+readme = "README.md"
+authors = [{name = "original4422"}]
+dependencies = []
+
+[project.scripts]
+repo-workbench = "repo_workbench.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["repo_workbench*"]
