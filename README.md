@@ -51,7 +51,7 @@ repo-workbench --repo ~/projects/demo-agent --verify --check --json
 - `--verify-remote`: read the selected branch with `git ls-remote`, without fetching or modifying refs.
 - `--github`: read check runs and commit statuses for the exact local HEAD SHA using `gh api`.
 
-`delivered: true` means **clean tree + exact remote branch head + all reported CI results successful** at inspection time. The checks are collected sequentially; the result is a point-in-time observation, not a lock on the remote branch. Missing CI, pending checks, skipped/neutral checks, unavailable APIs, and checks for another SHA are distinct states and never count as success. Repeated check runs use the latest run per GitHub App, check suite, and check name. This is a commit CI check, not an evaluation of branch-protection or review requirements.
+`delivered: true` means **clean tree + exact remote branch head + all reported CI results successful** at inspection time. The checks are collected sequentially; the result is a point-in-time observation, not a lock on the remote branch. Missing CI, pending checks, skipped/neutral checks, unavailable APIs, and checks for another SHA are distinct states and never count as success. The [check-runs API](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference) is queried with `filter=all`, then repeated check runs use the highest run ID per GitHub App, check suite, and check name. Separate workflow suites with the same job name remain separate results. This is a commit CI check, not an evaluation of branch-protection or review requirements.
 
 ### Target branch selection
 

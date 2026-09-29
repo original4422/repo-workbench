@@ -209,6 +209,7 @@ class GitHubTests(unittest.TestCase):
         responses = [subprocess.CompletedProcess([], 0, json.dumps(pages), ""), subprocess.CompletedProcess([], 0, json.dumps(status), "")]
         with patch("repo_workbench.core.shutil.which", return_value="/bin/gh"), patch("repo_workbench.core.command", side_effect=responses) as calls:
             self.assertEqual(github_ci("example/project", self.head)["state"], "success")
+        self.assertIn("filter=all", calls.call_args_list[0].args[0][2])
         for call in calls.call_args_list:
             self.assertIn(f"/commits/{self.head}/", call.args[0][2])
             self.assertIn("--paginate", call.args[0])

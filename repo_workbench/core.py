@@ -91,7 +91,7 @@ def summarize_ci(head, check_pages, status):
     latest = {}
     for check in sorted(checks, key=lambda item: item["id"]):
         latest[(check["app"]["id"], check["check_suite"]["id"], check["name"])] = {
-            "name": check["name"], "source": "check", "state": check["conclusion"] if check["status"] == "completed" else "pending"
+            "name": check["name"], "source": "check", "suite_id": check["check_suite"]["id"], "run_id": check["id"], "state": check["conclusion"] if check["status"] == "completed" else "pending"
         }
     evidence = list(latest.values()) + [
         {"name": item["context"], "source": "status", "state": item["state"]} for item in status["statuses"]
@@ -111,7 +111,7 @@ def github_ci(slug, head):
     if not shutil.which("gh"):
         return {"state": "unavailable", "checks": []}
     try:
-        checks = command(["gh", "api", f"repos/{slug}/commits/{head}/check-runs?per_page=100", "--paginate", "--slurp"])
+        checks = command(["gh", "api", f"repos/{slug}/commits/{head}/check-runs?per_page=100&filter=all", "--paginate", "--slurp"])
         status = command(["gh", "api", f"repos/{slug}/commits/{head}/status?per_page=100", "--paginate", "--slurp"])
     except subprocess.TimeoutExpired:
         return {"state": "unavailable", "checks": []}
