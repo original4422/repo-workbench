@@ -29,9 +29,9 @@ repo-workbench ~/projects --json
 Example with fictional repositories:
 
 ```text
-REPOSITORY  BRANCH  WORKTREE  CACHED A/B  REMOTE HEAD  CI @ HEAD  DELIVERED
-demo-agent  main    clean     0/0         unverified   unchecked  no
-demo-evals  feat    dirty     2/0         unverified   unchecked  no
+REPOSITORY  BRANCH  HEAD      WORKTREE  CACHED A/B  TARGET       REMOTE HEAD  CI @ HEAD  DELIVERED
+demo-agent  main    a1b2c3d4  clean     0/0         origin/main  unverified   unchecked  no
+demo-evals  feat    e5f6a7b8  dirty     2/0         origin/feat  unverified   unchecked  no
 ```
 
 `A/B` means ahead/behind the **locally cached** upstream ref. A local scan does not contact any server and cannot certify delivery.

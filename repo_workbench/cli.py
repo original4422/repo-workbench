@@ -34,13 +34,15 @@ def main(argv=None):
     if args.json:
         print(json.dumps({"schema_version": 1, "repositories": shown}, indent=2, sort_keys=True))
     else:
-        headers = ["REPOSITORY", "BRANCH", "WORKTREE", "CACHED A/B", "REMOTE HEAD", "CI @ HEAD", "DELIVERED"]
+        headers = ["REPOSITORY", "BRANCH", "HEAD", "WORKTREE", "CACHED A/B", "TARGET", "REMOTE HEAD", "CI @ HEAD", "DELIVERED"]
         rows = [headers]
         for repo in shown:
             upstream = repo["upstream"]
-            rows.append([repo["name"], repo["branch"] or "(detached)", "dirty" if repo["dirty"] else "clean",
+            target = repo["target"]
+            target_name = f"{target['remote']}/{target['ref'].removeprefix('refs/heads/')}" if target["ref"] else target["state"]
+            rows.append([repo["name"], repo["branch"] or "(detached)", repo["head"][:8] if repo["head"] else "(unborn)", "dirty" if repo["dirty"] else "clean",
                          f"{upstream['ahead']}/{upstream['behind']}" if upstream["name"] else "—",
-                         repo["publication"]["state"], repo["ci"]["state"], "yes" if repo["delivered"] else "no"])
+                         target_name, repo["publication"]["state"], repo["ci"]["state"], "yes" if repo["delivered"] else "no"])
         widths = [max(len(row[i]) for row in rows) for i in range(len(headers))]
         for row in rows:
             print("  ".join(value.ljust(width) for value, width in zip(row, widths)).rstrip())
