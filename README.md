@@ -98,6 +98,53 @@ Remote URLs, credentials, file contents, changed filenames, and session logs are
 
 `--needs-attention` only filters output. `--check` evaluates all scanned repositories. Remote/API failures are report states, so ordinary scans still exit `0`; combine with `--check` for a gate.
 
+## Keep a fixed delivery batch
+
+A later commit should not replace the evidence for a batch you already accepted. Create a portable manifest for the selected repositories:
+
+```sh
+repo-workbench --repo ~/projects/demo-agent --repo ~/projects/demo-evals \
+  --write-manifest ~/deliveries/batch-01.json
+```
+
+`--write-manifest` performs live remote and GitHub verification. It creates the file only when **every selected repository** is clean, has the exact remote branch head, and has successful CI. A failed batch exits `1` without creating a file. The destination directory must exist; an existing file or a destination inside an inspected repository is rejected. Give each batch a new filename.
+
+The manifest uses repository directory names, GitHub identities, target branches, and full SHAs. It contains no absolute clone paths or remote URLs. This fictional example shows the format:
+
+```json
+{
+  "schema_version": 1,
+  "kind": "repo-workbench-delivery",
+  "verified_at": "2026-09-30T00:00:00+00:00",
+  "repositories": [
+    {
+      "name": "demo-agent",
+      "github": "example/demo-agent",
+      "branch": "main",
+      "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}
+```
+
+Recheck that exact batch later or from another machine:
+
+```sh
+repo-workbench --manifest ~/deliveries/batch-01.json --root ~/projects --check
+repo-workbench --manifest ~/deliveries/batch-01.json --root ~/projects \
+  --map demo-agent=~/other-clones/agent --json
+```
+
+`--root DIR` resolves each entry as `DIR/name`; repeat `--map NAME=PATH` to override individual locations. When every entry is mapped, `--root` is optional. Local branches and remote names may differ from the capturing clone. Exactly one fetch remote must match the recorded GitHub identity; the recorded target branch stays fixed. Duplicate names, duplicate mappings, unknown mapping names, and two entries mapped to one clone are errors.
+
+Manifest mode always queries live evidence, so scan flags such as `--verify`, `--repo`, `--remote`, and `--branch` do not apply. The file is an editable target record; its `verified_at` records capture time and is not used to establish current success.
+
+The recheck JSON has `kind: repo-workbench-delivery-recheck`. Each row contains `expected_sha`, `local_head`, `local_state`, `dirty`, `identity`, `publication` (including the observed remote SHA), `expected_ci`, and `verified`. **CI is queried for the recorded SHA**, even if the local HEAD has changed. A newer green commit cannot substitute for an older failing commit, and an older green commit does not certify the newer working tree.
+
+`verified: true` requires a clean matching local HEAD, a uniquely matching GitHub remote whose target branch still points to the recorded SHA, and successful CI for that SHA. Missing clones, changed local heads, dirty trees, mismatched/ambiguous remote identities, changed remote heads, and unavailable CI remain visible independently. A different remote head still has **unknown containment**; no ancestry is inferred or fetched.
+
+Ordinary rechecks exit `0` after reporting all entries; `--check` exits `1` if any entry is not verified. Invalid manifests, mappings, and argument combinations exit `2`. `--needs-attention` filters output only; `--check` still evaluates the complete batch. The original scan's `delivered` contract is unchanged.
+
 ## Development
 
 ```sh
@@ -107,7 +154,7 @@ python3 -m repo_workbench --help
 python3 -m unittest discover -s tests -v
 ```
 
-Tests create real temporary Git repositories and local bare remotes. They cover dirty/untracked worktrees, stale refs, ahead/behind/divergence, branch-name differences, multiple remotes, detached and unborn states, linked worktrees, read-only file equality, GitHub SHA matching, reruns, and CLI exit codes. GitHub API contracts are exercised with fixtures; tests need no credentials or network.
+Tests create real temporary Git repositories and local bare remotes. They cover dirty/untracked worktrees, stale refs, ahead/behind/divergence, branch-name differences, multiple remotes, detached and unborn states, linked worktrees, read-only file equality, GitHub SHA matching, reruns, and CLI exit codes. Manifest tests also cover old/new SHA separation, relocated clones, partial batches, exclusive output, and byte-for-byte target repository preservation. GitHub API contracts are exercised with fixtures; tests need no credentials or network.
 
 The tool never commits, pushes, fetches, cleans, or edits scanned repositories. `GIT_OPTIONAL_LOCKS=0` avoids index refresh writes during status inspection. It is intended for non-bare local working repositories; GitHub CI checks currently support github.com remotes.
 
